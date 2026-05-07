@@ -1,44 +1,77 @@
-This is a [Next.js](https://nextjs.org/) template to use when reporting a [bug in the Next.js repository](https://github.com/vercel/next.js/issues).
+# `@next/third-parties` pins `next@16.3.0-canary.14` in `devDependencies`, which bundles vulnerable `postcss <8.5.10` (`GHSA-qx2v-qp2m-jg93`)
 
-## Getting Started
+### Link to the code that reproduces this issue
 
-These are the steps you should follow when creating a bug report:
+https://github.com/dhuang-lmg/next-third-parties-GHSA-qx2v-qp2m-jg93
 
-- Bug reports must be verified against the `next@canary` release. The canary version of Next.js ships daily and includes all features and fixes that have not been released to the stable version yet. Think of canary as a public beta. Some issues may already be fixed in the canary version, so please verify that your issue reproduces before opening a new issue. Issues not verified against `next@canary` will be closed after 30 days.
-- Make sure your issue is not a duplicate. Use the [GitHub issue search](https://github.com/vercel/next.js/issues) to see if there is already an open issue that matches yours. If that is the case, upvoting the other issue's first comment is desirable as we often prioritize issues based on the number of votes they receive. Note: Adding a "+1" or "same issue" comment without adding more context about the issue should be avoided. If you only find closed related issues, you can link to them using the issue number and `#`, eg.: `I found this related issue: #3000`.
-- If you think the issue is not in Next.js, the best place to ask for help is our [Discord community](https://nextjs.org/discord) or [GitHub discussions](https://github.com/vercel/next.js/discussions). Our community is welcoming and can often answer a project-related question faster than the Next.js core team.
-- Make the reproduction as minimal as possible. Try to exclude any code that does not help reproducing the issue. E.g. if you experience problems with Routing, including ESLint configurations or API routes aren't necessary. The less lines of code is to read through, the easier it is for the Next.js team to investigate. It may also help catching bugs in your codebase before publishing an issue.
+### To Reproduce
 
-## How to use this template
+### Steps to reproduce
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init), [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/), or [pnpm](https://pnpm.io) to bootstrap the example:
+1. Install `@next/third-parties@16.2.5` alongside `next@16.2.5`.
+2. Run `npm audit`.
+3. Observe 3 moderate severity findings.
 
-```bash
-npx create-next-app --example reproduction-template-pages reproduction-app
+```
+postcss  <8.5.10
+Severity: moderate
+PostCSS has XSS via Unescaped </style> in CSS Stringify Output
+No fix available
+node_modules/next/node_modules/postcss
+  next  9.3.4-canary.0 - 16.3.0-canary.5
+  Depends on vulnerable versions of postcss
+    @next/third-parties  *
+    Depends on vulnerable versions of next
 ```
 
-```bash
-yarn create next-app --example reproduction-template-pages reproduction-app
-```
+### Current vs. Expected behavior
+
+### Current behavior
+
+`@next/third-parties` pins `"next": "16.3.0-canary.14"` in its [`devDependencies`](https://github.com/vercel/next.js/blob/canary/packages/third-parties/package.json#L30). That version of `next` bundles `postcss@8.4.31` as a private nested dependency under postcss. Since `postcss@8.4.31 < 8.5.10`, `npm audit` flags a **moderate** XSS vulnerability across the entire chain.
+
+Advisory: [GHSA-qx2v-qp2m-jg93 – PostCSS XSS via Unescaped `</style>` in CSS Stringify Output](https://github.com/advisories/GHSA-qx2v-qp2m-jg93)
+
+### Expected behavior
+
+`@next/third-parties` should update its pinned `devDependency` on `next` (currently `"next": "16.3.0-canary.14"` at [`packages/third-parties/package.json#L30`](https://github.com/vercel/next.js/blob/canary/packages/third-parties/package.json#L30)) to a version of `next` that bundles `postcss >= 8.5.10`, so that `npm audit` no longer flags this package.
+
+### Provide environment information
 
 ```bash
-pnpm create next-app --example reproduction-template-pages reproduction-app
+Operating System:
+  Platform: darwin
+  Arch: arm64
+  Version: Darwin Kernel Version 25.4.0: Thu Mar 19 19:32:59 PDT 2026; root:xnu-12377.101.15~1/RELEASE_ARM64_T8122
+  Available memory (MB): 16384
+  Available CPU cores: 8
+Binaries:
+  Node: 22.21.1
+  npm: 10.9.4
+  Yarn: N/A
+  pnpm: N/A
+Relevant Packages:
+  next: 16.2.5 // Latest available version is detected (16.2.5).
+  eslint-config-next: N/A
+  react: 19.2.6
+  react-dom: 19.2.6
+  typescript: 5.9.3
+Next.js Config:
+  output: N/A
 ```
 
-## Learn More
+### Which area(s) are affected? (Select all that apply)
 
-To learn more about Next.js, take a look at the following resources:
+Not sure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [How to Contribute to Open Source (Next.js)](https://www.youtube.com/watch?v=cuoNzXFLitc) - a video tutorial by Lee Robinson
-- [Triaging in the Next.js repository](https://github.com/vercel/next.js/blob/canary/contributing.md#triaging) - how we work on issues
-- [CodeSandbox](https://codesandbox.io/s/github/vercel/next.js/tree/canary/examples/reproduction-template-pages) - Edit this repository on CodeSandbox
+### Which stage(s) are affected? (Select all that apply)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+next dev (local), next build (local)
 
-## Deployment
+### Additional context
 
-If your reproduction needs to be deployed, the easiest way is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The vulnerability is introduced by `@next/third-parties` pinning `"next": "16.3.0-canary.14"` in `devDependencies` (https://github.com/vercel/next.js/blob/canary/packages/third-parties/package.json#L30).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+That version of `next` bundles `postcss@8.4.31` under `node_modules/next/node_modules/postcss`. The top-level `postcss` (8.5.14) is already patched, but `npm audit` still flags the nested copy bundled inside `next`.
+
+There is no available workaround via `npm audit fix` or package.json overrides since `postcss` is a private nested dependency of next.
